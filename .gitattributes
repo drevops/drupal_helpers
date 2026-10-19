@@ -8,15 +8,12 @@ CLAUDE.md          export-ignore
 .gitattributes     export-ignore
 .github            export-ignore
 .gitignore         export-ignore
-.skip_npm_build    export-ignore
 .twig-cs-fixer.php export-ignore
 CONTRIBUTING.md    export-ignore
 SECURITY.md        export-ignore
 composer.dev.json  export-ignore
 docs.php           export-ignore
 logo.png           export-ignore
-package-lock.json  export-ignore
-package.json       export-ignore
 patches            export-ignore
 phpcs.xml          export-ignore
 phpstan.neon       export-ignore
@@ -26,4 +23,3 @@ rector.php         export-ignore
 renovate.json      export-ignore
 scripts            export-ignore
 tests              export-ignore
-

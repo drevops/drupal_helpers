@@ -3,15 +3,11 @@
 ---
 ahoyapi: v2
 
-env:
-  - .env
-
 commands:
 
   build:
     usage: Build or rebuild the project.
     cmd: |
-      ahoy stop > /dev/null 2>&1 || true
       ahoy assemble
       ahoy start
       ahoy provision
@@ -39,7 +35,7 @@ commands:
     aliases: [debug-on, xdebug, xdebug-on]
     cmd: |
       [ "$(vendor/bin/eddy-info xdebug)" = "enabled" ] && echo "XDebug is already enabled. Run 'ahoy start' to disable." || \
-      (XDEBUG=1 vendor/bin/eddy-start && sleep 1 && [ "$(vendor/bin/eddy-info xdebug)" = "enabled" ] && echo "Enabled XDebug. Run 'ahoy start' to disable." || (echo "Failed to enable XDebug." && exit 1))
+      (XDEBUG=1 vendor/bin/eddy-start && [ "$(vendor/bin/eddy-info xdebug)" = "enabled" ] && echo "Enabled XDebug. Run 'ahoy start' to disable." || (echo "Failed to enable XDebug." && exit 1))
 
   provision:
     usage: Provision application within assembled codebase.
@@ -51,10 +47,7 @@ commands:
 
   login:
     usage: Login to a website.
-    cmd: |
-      url="$(ahoy drush uli)"
-      printf '%s\n' "$url"
-      if [ -n "$LOGIN_QRCODE" ]; then vendor/bin/eddy-qrcode "$url"; fi
+    cmd: vendor/bin/eddy-login
 
   lint:
     usage: Check coding standards for violations.
@@ -124,7 +117,6 @@ commands:
       php -d pcov.directory=.. vendor/bin/phpunit --testsuite functional-javascript "$@"
       popd >/dev/null || exit 1
 
-
   browser-start:
     usage: Start the browser for FunctionalJavascript tests.
     cmd: vendor/bin/eddy-browser-start
@@ -137,7 +129,7 @@ commands:
     usage: Reset project to the default state.
     aliases: [delete, destroy]
     cmd: |
-      killall -9 php >/dev/null 2>&1 || true
+      vendor/bin/eddy-stop > /dev/null 2>&1 || true
       chmod -Rf 777 build .logs > /dev/null 2>&1 || true
       rm -Rf build > /dev/null 2>&1 || true
       rm -Rf .logs > /dev/null 2>&1 || true
@@ -154,6 +146,11 @@ entrypoint:
   - -c
   - -e
   - |
+    # Ahoy's 'env' option puts .env over the shell, so .env is loaded here and
+    # the non-empty exported shell variables are restored after it. Readonly
+    # ones such as SHELLOPTS are skipped by their 'r' flag, which 'export -p'
+    # omits in POSIX mode and 'declare -x' doesn't.
+    if [ -f .env ]; then shell_env="$(declare -x | sed -e '/=""$/d' -e '/^declare -[^ ]*r/d')"; set -a; . ./.env; set +a; eval "$shell_env"; fi
     # Resolve a relative TMPDIR to an absolute path so tools that chdir (pushd
     # build) still find it. No-op when unset or already absolute.
     if [ -n "${TMPDIR:-}" ]; then case "$TMPDIR" in /*) ;; *) TMPDIR="$PWD/$TMPDIR" ;; esac; mkdir -p "$TMPDIR"; export TMPDIR; fi

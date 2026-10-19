@@ -101,7 +101,6 @@ jobs:
         run: vendor/bin/twig-cs-fixer
         continue-on-error: ${{ vars.CI_TWIGCSFIXER_IGNORE_FAILURE == '1' }}
 
-
   test:
     runs-on: ubuntu-26.04
 
@@ -237,7 +236,6 @@ jobs:
 
       - name: Provision site
         run: vendor/bin/eddy-provision
-
 
       - name: Run tests
         if: ${{ env.CI_IS_PHPUNIT_RUNNER == 'true' }}
