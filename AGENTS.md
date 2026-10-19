@@ -8,7 +8,9 @@ Drupal Helpers (`drupal_helpers`) is a Drupal module. The project provides a com
 
 ## Development Commands
 
-**HARD RULE - use the provided command wrappers, never the tool binaries directly.** When `ahoy` exposes a command for a task, use that command; do not call the underlying binary directly. Each wrapper `chdir`s into `build/` and runs the tool with the config, plugins, and environment that CI uses, so a raw invocation from the repository root silently diverges from CI - it can pass locally while CI fails (or vice versa), or crash outright when a relative path resolves against the wrong directory. If no wrapped command covers what you need, extend the `ahoy` command rather than making a one-off raw call; if that is not feasible, stop and ask.
+**HARD RULE - use the provided command wrappers, never the tool binaries directly.** When `ahoy` exposes a command for a task, use that command; do not call the underlying binary directly. Each wrapper runs the tool where CI runs it, in `build/` for most tools, with the config, plugins, and environment that CI uses, so a raw invocation from the repository root silently diverges from CI - it can pass locally while CI fails (or vice versa), or crash outright when a relative path resolves against the wrong directory. If no wrapped command covers what you need, extend the `ahoy` command rather than making a one-off raw call; if that is not feasible, stop and ask.
+
+**HARD RULE - never modify `scripts/eddy-tooling`.** It comes from Eddy as-is, and a scaffold update replaces it with the release's copy. To change what a tooling command does, declare a patch for the `drevops/eddy-tooling` package in `composer.dev.json`.
 
 Run each tool through its `ahoy` wrapper, never the binary directly:
 
@@ -51,7 +53,7 @@ Run each tool through its `ahoy` wrapper, never the binary directly:
 
 ### Diagnostics
 
-- `ahoy info` - Print a read-only summary of PHP/Drupal/Composer/Drush/Node/npm versions, webserver host/port (with source), site URL, XDebug state, WebDriver port, build directory, database path, and active profile. (alias: `ahoy describe`)
+- `ahoy info` - Print a read-only summary of PHP/Drupal/Composer/Drush/Node/npm versions, webserver host/port (with source), site URL, XDebug state, build directory, database path, and active profile. (alias: `ahoy describe`)
 
 ## Project Structure
 
@@ -74,11 +76,16 @@ Run each tool through its `ahoy` wrapper, never the binary directly:
 - `DRUPAL_VERSION` - Target Drupal version (e.g., `10`, `11`, `11@alpha`, `12@beta`). Defaults to `extra.eddy.drupal-version` in `composer.dev.json`
 - `WEBSERVER_HOST` - Development server host (default: localhost)
 - `WEBSERVER_PORT` - Development server port. Auto-discovered from range 8000-8099 and written to `.env` if not already set
+- `WEBSERVER_WAIT_TIMEOUT` - Seconds that `start` waits for the development server to accept connections (default: 5)
+- `DRUPAL_PROFILE` - Install profile that `provision` installs the site from (default: `standard`)
+- `XDEBUG` - Set to `1` to start the development server with XDebug step-debugging
+- `CLOUDFLARE_TUNNEL` - Set to `1` to expose the development server through a public Cloudflare quick tunnel. `start` writes the tunnel URL to `.env` as `TUNNEL_URL`
+- `LOGIN_QRCODE` - Set to `1` to also render the `login` link as a terminal QR code (needs `qrencode`)
 - `WEBDRIVER_BACKEND` - FunctionalJavascript WebDriver backend: `chromedriver` (default, drives the locally installed Chrome with no Docker) or `selenium` (Docker container)
 - `WEBDRIVER_PORT` - Port for the WebDriver endpoint (both backends). Auto-discovered from 4444 and written to `.env` if not already set, so several projects can run FunctionalJavascript tests simultaneously. The endpoint in `phpunit.xml` is the default for port 4444; tests reach the resolved port because the FunctionalJavascript base class rewrites the port in `MINK_DRIVER_ARGS_WEBDRIVER` from this variable, so FunctionalJavascript tests must extend that base class (or export their own `MINK_DRIVER_ARGS_WEBDRIVER`)
 - `WEBDRIVER_HOST` - Address the FunctionalJavascript browser uses to reach the PHP webserver. Defaults to `localhost` with `chromedriver`, and to `host.docker.internal` (macOS) or `172.17.0.1` (other systems) with `selenium`
 - `GITHUB_TOKEN` - GitHub API token to avoid rate limits
-- `DEBUG` - Set to `1` to stream the full output of the underlying commands (Composer, npm, Drush). By default this output is suppressed and shown only when a command fails
+- `DEBUG` - Set to `1` to stream the full output of the underlying commands (Composer, Drush). By default this output is suppressed and shown only when a command fails
 
 ## Development Workflow
 
@@ -87,11 +94,11 @@ Run each tool through its `ahoy` wrapper, never the binary directly:
 3. Regenerate API docs in README: `php docs.php`
 4. Check standards: `ahoy lint`
 5. Run tests: `ahoy test`
-6. Access site at http://localhost:8000
+6. Access site at the URL that `ahoy info` reports
 
 ## Code Quality Tools
 
-- **PHPCS**: Drupal and DrupalPractice standards
+- **PHPCS**: Drupal, DrupalPractice, DrevOps and PHPCompatibility standards
 - **PHPStan**: Static analysis with Drupal extensions
 - **Rector**: Automated refactoring and deprecation fixes
 - **Twig CS Fixer**: Twig template formatting
@@ -110,7 +117,7 @@ Run each tool through its `ahoy` wrapper, never the binary directly:
 - The `build/` directory contains the assembled Drupal site
 - Extension files are symlinked from root into `build/web/modules/custom/`
 - SQLite database created in `/tmp/site_drupal_helpers.sqlite`
-- All quality tools run from within `build/` directory
+- The PHP quality tools run from within the `build/` directory
 - The `docs.php` script generates API reference documentation in the README from helper class docblocks. The lint step verifies the README is up to date with `php docs.php --fail-on-change`
 
 ## Updating the scaffold
