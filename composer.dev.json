@@ -16,6 +16,7 @@
         "phpcompatibility/php-compatibility": "^9.3.5 || ^10@alpha",
         "phpspec/prophecy-phpunit": "^2",
         "phpstan/extension-installer": "^1.4.3",
+        "phpstan/phpstan": "<2.3.4",
         "phpstan/phpstan-phpunit": "^1 || ^2",
         "phpunit/phpunit": "^9.6 || ^10.5 || ^11",
         "symfony/browser-kit": "^6.4 || ^7 || ^8",
